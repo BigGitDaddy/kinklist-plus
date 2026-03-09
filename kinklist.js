@@ -19,11 +19,7 @@ var strToClass = function(str){
     for(var i = 0; i < str.length; i++) {
         var chr = str[i];
         if(validChars.indexOf(chr) >= 0) {
-            if(newWord) chr = chr.toUpperCase();var $tip = $('<span />', {
-    class: 'kink-tooltip',
-    text: '?',
-    title: 'Show description'
-});
+            if(newWord) chr = chr.toUpperCase();
             className += chr;
             newWord = false;
         }
@@ -515,7 +511,7 @@ $(function() {
             link.click();
             document.body.removeChild(link);
             
-            $('#URL').val(filename).fadeIn();
+            $('#URL').val('Downloaded: ' + filename).fadeIn();
         },
         encode: function(base, input){
             var hashBase = inputKinks.hashChars.length;
