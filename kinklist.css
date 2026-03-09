@@ -423,8 +423,9 @@ footer {
 
 .kinkGroupParent {
 	position: relative;
-	overflow: hidden;
+	overflow: visible;
 	transition: max-height 0.3s cubic-bezier(0.65, 0.05, 0.36, 1);
+	max-height: none !important;
 }
 
 .kinkGroupCollapse {
@@ -441,6 +442,7 @@ footer {
 
 .kinkCollapsed {
 	max-height: 24px !important;
+	overflow: hidden;
 }
 
 .KinkDesc {
@@ -537,6 +539,75 @@ footer {
 
 #InputList {
 	display: flow-root;
+}
+
+/* Tooltip help */
+.has-tooltip {
+	position: relative;
+}
+
+.kink-tooltip {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 13px;
+	height: 13px;
+	margin-left: 6px;
+	border-radius: 50%;
+	border: 1px solid var(--color-borders);
+	color: var(--color-text);
+	font-size: 10px;
+	font-weight: 700;
+	line-height: 1;
+	cursor: help;
+	opacity: 0.75;
+	vertical-align: middle;
+	background-color: transparent;
+}
+
+.kink-tooltip:hover,
+.kink-tooltip:focus {
+	opacity: 1;
+}
+
+.tooltip-bubble {
+	display: none;
+	position: absolute;
+	left: 0;
+	top: calc(100% + 6px);
+	z-index: 2000;
+	min-width: 220px;
+	max-width: 320px;
+	padding: 8px 10px;
+	border: 1px solid var(--color-borders);
+	border-radius: 6px;
+	background: var(--color-bg);
+	color: var(--color-text);
+	font-size: 12px;
+	line-height: 1.35;
+	white-space: normal;
+	box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+	text-indent: 0;
+	overflow: visible;
+}
+
+.choice-tooltip {
+	left: auto;
+	right: 0;
+	top: calc(100% + 6px);
+}
+
+.legend .has-tooltip {
+	position: relative;
+}
+
+@media (max-width: 597px) {
+	.tooltip-bubble,
+	.choice-tooltip {
+		left: 0;
+		right: auto;
+		max-width: min(280px, calc(100vw - 40px));
+	}
 }
 
 /* QUIZ MODE OVERLAY */

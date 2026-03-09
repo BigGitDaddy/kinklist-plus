@@ -31,7 +31,6 @@ var strToClass = function(str){
 };
 var updateCssRule = function(selector, rules){
     var sheet = document.styleSheets[0];
-    // Insert (backwards-compat with deprecated addRule)
     if("insertRule" in sheet) {
         sheet.insertRule(selector + "{" + rules + "}", 0);
     }
@@ -39,9 +38,7 @@ var updateCssRule = function(selector, rules){
         sheet.addRule(selector, rules, 0);
     }
 };
-// https://stackoverflow.com/a/7627603
 var getCssName = function(inputName) {
-    // Return a "sanitized" name for CSS styling
     return inputName.replace(/[^a-z0-9]/g, function(s) {
         var c = s.charCodeAt(0);
         if (c == 32) return '-';
@@ -81,7 +78,7 @@ var initThemes = function() {
     }, 'text');
 }
 
-var inputKinks = {}; // Global context obj
+var inputKinks = {};
 var kinks = {};
 var choices = {};
 var listDescription = "";
@@ -171,7 +168,7 @@ $(function() {
             var heights = [];
             for(var i = 0; i < $categories.length; i++) {
                 var $clone = $categories[i].clone().appendTo($body);
-                var height = $clone.height();
+                var height = $clone.outerHeight(true);
                 totalHeight += height;
                 heights.push(height);
                 $clone.remove();
@@ -182,11 +179,9 @@ $(function() {
             for(var i = 0; i < $categories.length; i++) {
                 var curHeight = inputKinks.$columns[colIndex].height();
                 var catHeight = heights[i];
-                // Limit index, just in case
                 if (curHeight + (catHeight / 2) > colHeight) {
                     colIndex = Math.min(colIndex+1, inputKinks.$columns.length-1);
                 }
-                $categories[i].children('div').css('max-height', heights[i]*1.1);
                 inputKinks.$columns[colIndex].append($categories[i]);
             }
         },
@@ -212,7 +207,6 @@ $(function() {
             }
             inputKinks.placeCategories($categories);
 
-            // Make things update hash
             $('#InputList').find('button.choice').on('click', function(){
                 location.hash = inputKinks.updateHash();
             });
@@ -223,25 +217,30 @@ $(function() {
             for(var i = 0; i < c.length; i++) {
                 var choice = choices[c[i]];
                 var cssName = getCssName(choice.choiceName);
-                var label = $(`<div><span data-color="${choice.choiceColor}" class="choice ${cssName}"></span> <span class="legend-text">${choice.choiceName}</span></div>`).appendTo(".legend")
+                var $label = $(`<div><span data-color="${choice.choiceColor}" class="choice ${cssName}"></span> <span class="legend-text">${choice.choiceName}</span></div>`).appendTo(".legend");
                 if(choice.choiceDesc) {
-                    showChoiceDescriptionButton(choice.choiceDesc, label.parent());
-                    label.addClass("legend-desc");
+                    showChoiceDescriptionButton(choice.choiceDesc, $label);
+                    $label.addClass("legend-desc");
                 }
             }
+
+            $('.choice[data-color]').each(function() {
+                var color = $(this).data('color');
+                this.style.setProperty('background-color', color, 'important');
+                this.style.setProperty('border-color', color, 'important');
+            });
         },
         init: function(){
-            // Set up DOM
             inputKinks.fillInputList();
-
-            // Read hash
             inputKinks.parseHash();
 
-            // Make export button work
             $('#Export').on('click', inputKinks.export);
             $('#URL').on('click', function() { this.select(); });
 
-            // On resize, redo columns
+            window.addEventListener('hashchange', function() {
+                inputKinks.parseHash();
+            });
+
             (function() {
                 var lastResize = 0;
                 $(window).on('resize', function() {
@@ -300,7 +299,6 @@ $(function() {
                 width: width,
                 height: height
             });
-            // $canvas.insertBefore($('#InputList'));
 
             var context = canvas.getContext('2d');
             context.fillStyle = '#FFFFFF';
@@ -336,7 +334,6 @@ $(function() {
                 var y = drawCall.y - 6;
                 context.fillText(drawCall.data.text, x, y);
 
-                // Circles
                 for(var i = 0; i < drawCall.data.choices.length; i++){
                     var choice = drawCall.data.choices[i];
                     var color = choices[choice].choiceColor;
@@ -368,7 +365,6 @@ $(function() {
             }
         },
         findButtonPressed: function() {
-            // Highlight all kink sections that are not yet filled in
         },
         toggleCategoryCollapsed: function() {
             var $parent = this.closest('div');
@@ -391,7 +387,6 @@ $(function() {
             $('#Loading').fadeIn();
             $('#URL').fadeOut();
 
-            // Constants
             var numCols = 6;
             var columnWidth = 250;
             var simpleTitleHeight = 35;
@@ -404,27 +399,22 @@ $(function() {
                 bottom: 10
             };
 
-            // Find out how many we have of everything
             var numCats = $('.kinkCategory').length;
             var dualCats = $('.kinkCategory th + th + th').length;
             var simpleCats = numCats - dualCats;
             var numKinks = $('.kinkRow').length;
 
-            // Determine the height required for all categories and kinks
             var totalHeight = (
                     (numKinks * rowHeight) +
                     (dualCats * titleSubtitleHeight) +
                     (simpleCats * simpleTitleHeight)
             );
 
-            // Initialize columns and drawStacks
             var columns = [];
             for(var i = 0; i < numCols; i++){
                 columns.push({ height: 0, drawStack: []});
             }
 
-            // Create drawcalls and place them in the drawStack
-            // for the appropriate column
             var avgColHeight = totalHeight / numCols;
             var columnIndex = 0;
             $('.kinkCategory').each(function(){
@@ -438,12 +428,10 @@ $(function() {
                 catHeight += (fields.length === 1) ? simpleTitleHeight : titleSubtitleHeight;
                 catHeight += (catKinks.length * rowHeight);
 
-                // Determine which column to place this category in
                 if((columns[columnIndex].height + (catHeight / 2)) > avgColHeight) columnIndex++;
                 while(columnIndex >= numCols) columnIndex--;
                 var column = columns[columnIndex];
 
-                // Drawcall for title
                 var drawCall = { y: column.height };
                 column.drawStack.push(drawCall);
                 if(fields.length < 2) {
@@ -460,7 +448,6 @@ $(function() {
                     };
                 }
 
-                // Drawcalls for kinks
                 $cat.find('.kinkRow').each(function(){
                     var $kinkRow = $(this);
                     var drawCall = { y: column.height, type: 'kinkRow', data: {
@@ -470,7 +457,6 @@ $(function() {
                     column.drawStack.push(drawCall);
                     column.height += rowHeight;
 
-                    // Add choices
                     $kinkRow.find('.choices').each(function(){
                         var $selection = $(this).find('.choice.selected');
                         var selection = ($selection.length > 0)
@@ -508,32 +494,24 @@ $(function() {
                 }
             }
 
-            //return $(canvas).insertBefore($('#InputList'));
-
-            // Send canvas to imgur
-            $.ajax({
-                url: 'https://api.imgur.com/3/image',
-                type: 'POST',
-                headers: {
-                    // Your application gets a client ID from Imgur
-                    Authorization: 'Client-ID ' + IMGUR_CLIENTID,
-                    Accept: 'application/json'
-                },
-                data: {
-                    // convert the image data to base64
-                    image:  canvas.toDataURL().split(',')[1],
-                    type: 'base64'
-                },
-                success: function(result) {
-                    $('#Loading').hide();
-                    var url = 'https://i.imgur.com/' + result.data.id + '.png';
-                    $('#URL').val(url).fadeIn();
-                },
-                fail: function(){
-                    $('#Loading').hide();
-                    alert('Failed to upload to imgur, could not connect');
-                }
-            });
+            $('#Loading').hide();
+            
+            var safeUsername = username
+                ? username.replace(/[()]/g, '').trim().replace(/[^a-z0-9-_]+/gi, '_')
+                : 'export';
+            
+            if(!safeUsername) safeUsername = 'export';
+            
+            var filename = 'kinklist-' + safeUsername + '.png';
+            
+            var link = document.createElement('a');
+            link.href = canvas.toDataURL('image/png');
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            $('#URL').val('Downloaded: ' + filename).fadeIn();
         },
         encode: function(base, input){
             var hashBase = inputKinks.hashChars.length;
@@ -595,7 +573,6 @@ $(function() {
                 var intVal = Math.pow(hashBase, pow) * charInt;
                 chunkInt += intVal;
             }
-            var chunkIntCopy = chunkInt;
 
             var output = [];
             for(var pow = inputPow - 1; pow >= 0; pow--) {
@@ -613,33 +590,44 @@ $(function() {
             $('#InputList .choices').each(function(){
                 var $this = $(this);
                 var lvlInt = $this.find('.selected').data('levelInt');
-                if(!lvlInt) lvlInt = 0;
+                if(!lvlInt && lvlInt !== 0) lvlInt = 0;
                 hashValues.push(lvlInt);
             });
             return inputKinks.encode(Object.keys(choices).length, hashValues);
         },
+        clearSelections: function(){
+            $('#InputList .choice').removeClass('selected');
+            $('#InputList td').addClass('incomplete');
+        },
         parseHash: function(){
             var hash = location.hash.substring(1);
-            if(hash.length < 10) return;
+            inputKinks.clearSelections();
+
+            if(hash.length < 10) {
+                $('#InputList .choices').each(function(){
+                    $(this).children().eq(0).addClass('selected');
+                });
+                return;
+            }
 
             var values = inputKinks.decode(Object.keys(choices).length, hash);
             var valueIndex = 0;
             $('#InputList .choices').each(function(){
                 var $this = $(this);
                 var value = values[valueIndex++];
+                if(typeof value !== 'number' || value < 0 || value >= $this.children().length) {
+                    value = 0;
+                }
                 $this.children().eq(value).addClass('selected');
+                $this.parents('td').removeClass('incomplete');
             });
         },
         saveSelection: function(){
             var selection = [];
             $('.choice.selected').each(function(){
-                // .choice selector
                 var selector = '.' + this.className.replace(/ /g, '.');
-                // .choices selector
                 selector = '.' + $(this).closest('.choices')[0].className.replace(/ /g, '.') + ' ' + selector;
-                // .kinkRow selector
                 selector = '.' + $(this).closest('tr.kinkRow')[0].className.replace(/ /g, '.') + ' ' + selector;
-                // .kinkCategory selector
                 selector = '.' + $(this).closest('.kinkCategory')[0].className.replace(/ /g, '.') + ' ' + selector;
                 selector = selector.replace('.selected', '');
                 selection.push(selector);
@@ -647,12 +635,8 @@ $(function() {
             return selection;
         },
         inputListToText: function(){
-            // not a fan of this function. lists are already stored as valid text
-            // so why not just hold onto the text and assign it on popup appear?
-            // TODO uh refactor later
             var KinksText = "";
 
-            // Parse choices and list description to text
             var c = Object.keys(choices);
             for (var i = 0; i < c.length; ++i) {
                 var choice = choices[c[i]]
@@ -665,7 +649,6 @@ $(function() {
             
             KinksText += `\r\n> ${listDescription}\r\n\r\n\r\n`;
 
-            // Parse kinks to text
             var kinkCats = Object.keys(kinks);
             for(var i = 0; i < kinkCats.length; i++){
                 var catName = kinkCats[i];
@@ -694,19 +677,20 @@ $(function() {
         loadKinkList: function(listFileName) {
             $.get(listFileName, function(data) {
                 $('#Kinks').text(data);
-                var selection = inputKinks.saveSelection();
                 inputKinks.parseKinksText(data);
                 inputKinks.fillInputList();
                 inputKinks.updateLegend();
-            }, 'text');
+                inputKinks.parseHash();
+            }, 'text').fail(function(xhr, status, err) {
+                console.error("Failed to load list:", listFileName, status, err);
+                alert("Failed to load " + listFileName);
+            });
         },
         parseKinksText: function(kinksText){
-            // Clear everything
             kinks = {};
             choices = {};
             listDescription = "";
 
-            // All choices come with "Not Applicable" by default, the only hard-coded choice
             choices["Not Applicable"] = { choiceName: "Not Applicable", choiceColor: "#FFFFFF", choiceDesc: "This kink does not apply to you, for any reason you decide." } 
             updateCssRule('.choice.' + getCssName(choices["Not Applicable"].choiceName), 'background-color: ' + choices["Not Applicable"].choiceColor + ';');
 
@@ -715,43 +699,40 @@ $(function() {
             var cat = null;
             var catName = null;
             var currChoice = null;
+            var kink = null;
             for(var i = 0; i < lines.length; i++){
                 var line = lines[i];
                 if(!line.length) continue;
 
-                // - : Parse choice and its color
                 if (line[0] === '-') {
                     if (currChoice)
                     {
                         choices[currChoice.choiceName] = currChoice;
-                        // Insert color to CSS rules here! Seems fitting enough
                         updateCssRule('.choice.' + getCssName(currChoice.choiceName), 'background-color: ' + currChoice.choiceColor + ';');
                         currChoice = null;
                     }
-                    lineParse = line.substring(1).trim().split(':');
+                    var lineParse = line.substring(1).trim().split(':');
                     currChoice = { choiceName: lineParse[0].trim(), choiceColor: lineParse[1].trim(), choiceDesc: "" };
+                    continue;
                 }
 
-                // ? : Parse description for current choice
                 if (line[0] === '?' && currChoice)
                 {
                     currChoice.choiceDesc = line.substring(1).trim();
+                    continue;
                 }
 
-                // > : Parse kink list description
                 if (line[0] === '>')
                 {
                     listDescription = line.substring(1).trim();
                     $('#ListDescription').text(listDescription);
+                    continue;
                 }
 
-                // # : Parse category
                 if(line[0] === '#') {
-                    // Stop parsing choice if we still are (usually the last choice)
                     if (currChoice)
                     {
                         choices[currChoice.choiceName] = currChoice;
-                        // Insert color to CSS rules here! Seems fitting enough
                         updateCssRule('.choice.' + getCssName(currChoice.choiceName), 'background-color: ' + currChoice.choiceColor + ';');
                         currChoice = null;
                     }
@@ -768,24 +749,33 @@ $(function() {
                     }
                     catName = line.substring(1).trim();
                     cat = { kinks: [] };
+                    kink = null;
+                    continue;
                 }
+
                 if(!catName) continue;
-                // ( : Parse category sections (Giving/Receiving, Self/Partner, General, etc)
+
                 if(line[0] === '(') {
                     cat.fields = line.substring(1, line.length - 1).trim().split(',');
                     for(var j = 0; j < cat.fields.length; j++){
                         cat.fields[j] = cat.fields[j].trim();
                     }
+                    continue;
                 }
-                // * : Parse kink for current category
+
                 if(line[0] === '*'){
-                    var kink = {};
-                    kink.kinkName = line.substring(1).trim();
+                    kink = {};
+                    var content = line.substring(1).trim();
+                    var parts = content.split(/\s*:::\s*/);
+                    kink.kinkName = parts[0].trim();
+                    if(parts.length > 1){
+                        kink.kinkDesc = parts.slice(1).join(" ::: ").trim();
+                    }
                     cat.kinks.push(kink);
+                    continue;
                 }
-                // ? : Parse description for current kink
-                if(line[0] === '?'){
-                    // what the fuck JS we're in-scope for this?
+
+                if(line[0] === '?' && kink){
                     kink.kinkDesc = line.substring(1).trim();
                 }
             }
@@ -836,27 +826,85 @@ $(function() {
         $('#DescriptionOverlay').fadeOut();
     });
 
+    function hideAllTooltips() {
+        $('.tooltip-bubble').hide();
+    }
+
     function showDescriptionButton(description, attachElement) {
-        $('<Button />', { "class": 'KinkDesc',  click: function() {
-                                                    $('#Description').text(description);
-                                                    $('#DescriptionOverlay').fadeIn();} 
-        }).appendTo(attachElement);
+        var $tip = $('<button />', {
+            class: 'kink-tooltip',
+            type: 'button',
+            html: '<span class="kink-tooltip-icon">i</span>',
+            title: 'Show description',
+            'aria-label': 'Show description'
+        });
+
+        var $bubble = $('<div />', {
+            class: 'tooltip-bubble',
+            text: description
+        }).hide();
+
+        $tip.on('mouseenter focus', function() {
+            hideAllTooltips();
+            $bubble.show();
+        });
+
+        $tip.on('mouseleave blur', function() {
+            $bubble.hide();
+        });
+
+        $tip.on('click', function(e) {
+            e.stopPropagation();
+            var wasVisible = $bubble.is(':visible');
+            hideAllTooltips();
+            if(!wasVisible) $bubble.show();
+        });
+
+        attachElement.addClass('has-tooltip');
+        attachElement.append($tip).append($bubble);
     }
 
     function showChoiceDescriptionButton(description, attachElement) {
-        $('<Button />', { "class": 'ChoiceDesc',  click: function() {
-                                                    $('#Description').text(description);
-                                                    $('#DescriptionOverlay').fadeIn();} 
-        }).appendTo(attachElement);
+        var $btn = $('<button />', {
+            class: 'ChoiceDesc',
+            type: 'button',
+            title: 'Show description'
+        });
+
+        var $bubble = $('<div />', {
+            class: 'tooltip-bubble choice-tooltip',
+            text: description
+        }).hide();
+
+        $btn.on('mouseenter focus', function() {
+            hideAllTooltips();
+            $bubble.show();
+        });
+
+        $btn.on('mouseleave blur', function() {
+            $bubble.hide();
+        });
+
+        $btn.on('click', function(e) {
+            e.stopPropagation();
+            var wasVisible = $bubble.is(':visible');
+            hideAllTooltips();
+            if(!wasVisible) $bubble.show();
+        });
+
+        attachElement.addClass('has-tooltip');
+        attachElement.append($btn).append($bubble);
     }
 
-    // Perform initial page refresh and initialization
+    $(document).on('click', function() {
+        hideAllTooltips();
+    });
+
     inputKinks.loadKinkList('lists/' + $("#listType").val() + '.txt');
     inputKinks.init();
 
     initThemes();
 
-    // Set site title, version and info
     document.title = `${SITE_NAME} ${SITE_VERSION}`;
     $('.topMenuTitle').text(SITE_NAME);
     $('.topMenuVersion').text(SITE_VERSION);
@@ -869,7 +917,6 @@ $(function() {
         var $previous = $('#InputPrevious');
         var $next = $('#InputNext');
 
-        // current
         var $category = $('#InputCategory');
         var $field = $('#InputField');
         var $options = $('#InputValues');
@@ -969,7 +1016,6 @@ $(function() {
                 $options.html('');
                 $popup.data('index', index);
 
-                // Current
                 var currentKink = inputKinks.inputPopup.kinkByIndex(index);
                 var $currentKink = inputKinks.inputPopup.generatePrimary(currentKink);
                 $options.append($currentKink);
@@ -978,7 +1024,6 @@ $(function() {
                 if(currentKink.kink.desc) {showDescriptionButton(currentKink.kink.desc, label);}
                 $options.append($currentKink);
 
-                // Prev
                 for(var i = inputKinks.inputPopup.numPrev; i > 0; i--){
                     var prevKink = inputKinks.inputPopup.kinkByIndex(index - i);
                     var $prevKink = inputKinks.inputPopup.generateSecondary(prevKink);
@@ -989,7 +1034,6 @@ $(function() {
                         });
                     })(i);
                 }
-                // Next
                 for(var i = 1; i <= inputKinks.inputPopup.numNext; i++){
                     var nextKink = inputKinks.inputPopup.kinkByIndex(index + i);
                     var $nextKink = inputKinks.inputPopup.generateSecondary(nextKink);
