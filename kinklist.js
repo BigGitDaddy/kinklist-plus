@@ -498,27 +498,24 @@ $(function() {
                 }
             }
 
-            $.ajax({
-                url: 'https://api.imgur.com/3/image',
-                type: 'POST',
-                headers: {
-                    Authorization: 'Client-ID ' + IMGUR_CLIENTID,
-                    Accept: 'application/json'
-                },
-                data: {
-                    image:  canvas.toDataURL().split(',')[1],
-                    type: 'base64'
-                },
-                success: function(result) {
-                    $('#Loading').hide();
-                    var url = 'https://i.imgur.com/' + result.data.id + '.png';
-                    $('#URL').val(url).fadeIn();
-                },
-                fail: function(){
-                    $('#Loading').hide();
-                    alert('Failed to upload to imgur, could not connect');
-                }
-            });
+            $('#Loading').hide();
+            
+            var safeUsername = username
+                ? username.replace(/[()]/g, '').trim().replace(/[^a-z0-9-_]+/gi, '_')
+                : 'export';
+            
+            if(!safeUsername) safeUsername = 'export';
+            
+            var filename = 'kinklist-' + safeUsername + '.png';
+            
+            var link = document.createElement('a');
+            link.href = canvas.toDataURL('image/png');
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            $('#URL').val(filename).fadeIn();
         },
         encode: function(base, input){
             var hashBase = inputKinks.hashChars.length;
