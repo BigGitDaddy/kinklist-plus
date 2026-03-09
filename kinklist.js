@@ -19,7 +19,11 @@ var strToClass = function(str){
     for(var i = 0; i < str.length; i++) {
         var chr = str[i];
         if(validChars.indexOf(chr) >= 0) {
-            if(newWord) chr = chr.toUpperCase();
+            if(newWord) chr = chr.toUpperCase();var $tip = $('<span />', {
+    class: 'kink-tooltip',
+    text: '?',
+    title: 'Show description'
+});
             className += chr;
             newWord = false;
         }
@@ -834,10 +838,12 @@ $(function() {
     }
 
     function showDescriptionButton(description, attachElement) {
-        var $tip = $('<span />', {
+        var $tip = $('<button />', {
             class: 'kink-tooltip',
-            text: '?',
-            title: 'Show description'
+            type: 'button',
+            html: '<span class="kink-tooltip-icon">i</span>',
+            title: 'Show description',
+            'aria-label': 'Show description'
         });
 
         var $bubble = $('<div />', {
